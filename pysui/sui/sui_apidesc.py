@@ -23,6 +23,11 @@ from pysui.sui.sui_excepts import (
     SuiParamSchemaInvalid,
 )
 
+### BEGIN_BFC_PATCH
+from pysui.bfc.rpc_patch import to_sui_rpc_method
+
+### END_BFC_PATCH
+
 
 class SuiJsonType(ABC):
     """Sui Json Type."""
@@ -178,6 +183,13 @@ def _resolve_param_type(schema_dict: dict, indata: dict, tpath: list) -> SuiJson
                 return SuiJsonNull.from_dict(dcp)
             case "boolean":
                 return SuiJsonBoolean.from_dict(dcp)
+            ### BEGIN_BFC_PATCH
+            case "number":
+                dcp["format"] = "uint64"
+                dcp["minimum"] = 0.0
+                dcp["type_path"] = ["integer"]
+                return SuiJsonInteger.from_dict(dcp)
+            ### END_BFC_PATCH
             case _:
                 raise NotImplementedError("ptype")
         return ptype
@@ -231,6 +243,12 @@ def build_api_descriptors(indata: dict) -> tuple[str, dict, dict]:
         mdict: dict = {}
         schema_dict: dict = indata["result"]["components"]["schemas"]
         for rpc_api in indata["result"]["methods"]:
+            ### BEGIN_BFC_PATCH
+            rpc_name = rpc_api["name"]
+            print(f"--> {rpc_name}")
+            if rpc_name.startswith("bfc_") or rpc_name.startswith("bfcx_"):
+                mdict[to_sui_rpc_method(rpc_name)] = SuiApi.from_dict(rpc_api)
+            ### END_BFC_PATCH
             mdict[rpc_api["name"]] = SuiApi.from_dict(rpc_api)
         for _api_name, api_def in mdict.items():
             for inparams in api_def.params:

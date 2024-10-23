@@ -49,6 +49,9 @@ from pysui.sui.sui_types.collections import SuiArray
 from pysui.sui.sui_types.scalars import SuiTxBytes
 
 
+from pysui.bfc.rpc_patch import to_bfc_rpc_method
+
+
 class SuiRpcResult(RpcResult):
     """Sui RpcResult.
 
@@ -182,6 +185,13 @@ class ClientMixin(Provider):
         builder_rpc_api = GetRpcAPI()
         builder_gas_price = GetReferenceGasPrice()
         builder_protocol = GetProtocolConfig()
+        ### BEGIN_BFC_PATCH
+        is_bfc_rpc = self.config.rpc_url.find(".benfen.org") != -1
+        if is_bfc_rpc:
+            builder_gas_price._method = to_bfc_rpc_method(builder_gas_price.method)
+            builder_protocol._method = to_bfc_rpc_method(builder_protocol.method)
+            print(builder_gas_price._method)
+        ### END_BFC_PATCH
 
         with httpx.Client(http2=True) as client:
             rpc_api_result = client.post(
@@ -214,6 +224,12 @@ class ClientMixin(Provider):
             self._protocol = ProtocolConfig.loader(rpc_protocol_result.json()["result"])
             self._gas_price = rpc_gas_result.json()["result"]
 
+        ### BEGIN_BFC_PATCH
+        if is_bfc_rpc:
+            api_desc = json.loads(rpc_api_result.text.replace('"number"', '"integer"'))
+        else:
+            api_desc = json.loads(rpc_api_result.text)
+        ### END_BFC_PATCH
         (
             self._rpc_version,
             self._rpc_api,
@@ -312,9 +328,9 @@ class ClientMixin(Provider):
             pass
         # If the running version is less than the minimum supported by pysui
         elif rpa < mpa:
-            raise RuntimeError(
-                f"Requires minimum version '{self._RPC_MINIMAL_VERSION} found {self._rpc_version}"
-            )
+            pass
+            ### FIX: ignore version
+            # raise RuntimeError(f"Requires minimum version '{self._RPC_MINIMAL_VERSION} found {self._rpc_version}")
         # If the running version is less than the most recent supported by pysui
         elif rpa < ipa:
             print(

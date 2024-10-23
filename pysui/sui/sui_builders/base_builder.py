@@ -176,7 +176,10 @@ class SuiBaseBuilder(Builder):
 
     def handle_return(self, indata: dict) -> Union[dict, SuiBaseType]:
         """Handle the expected return."""
+        print(f"handle_return: {indata}")
         if indata:
+            print(f"handler_cls: {self._handler_cls}")
+            print(f"handler_func: {self._handler_func}")
             if self._handler_cls and self._handler_func:
                 return getattr(self._handler_cls, self._handler_func)(indata)
             if self._handler_cls and self._handler_func is None:

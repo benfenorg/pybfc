@@ -24,12 +24,17 @@ from pysui.sui.sui_constants import SUI_HEX_ADDRESS_STRING_LEN
 from pysui.sui.sui_excepts import SuiInvalidAddress
 
 
+from pysui.bfc.address_patch import try_convert_to_sui_address, try_convert_to_bfc_address
+
 __partstring_pattern: re.Pattern = re.compile(r"[0-9a-fA-F]{1,64}")
 
 
 @versionchanged(version="0.19.0", reason="Addresses can be between 3 and 66 chars with prefix, 1 and 64 without.")
 def valid_sui_address(instr: str) -> bool:
     """Verify Sui address string."""
+    ### BEGIN_BFC_PATCH
+    instr = try_convert_to_sui_address(instr)
+    ### END_BFC_PATCH
     inlen = len(instr)
     if not instr or inlen > SUI_HEX_ADDRESS_STRING_LEN:
         return False
@@ -54,6 +59,9 @@ class SuiAddress(SuiBaseType):
     def __init__(self, identifier: Union[SuiString, str]) -> None:
         """Initialize address."""
         testvalid: str = identifier if isinstance(identifier, str) else identifier.value
+        ### BEGIN_BFC_PATCH
+        testvalid = try_convert_to_sui_address(testvalid)
+        ### END_BFC_PATCH
         if valid_sui_address(testvalid):
             testvalid = testvalid if testvalid.startswith("0x") else format(f"0x{testvalid}")
             super().__init__(SuiString(testvalid))
@@ -61,6 +69,9 @@ class SuiAddress(SuiBaseType):
             raise ValueError(f"{testvalid} is not valid address string")
         # Alias for transaction validation
         self.address = testvalid
+        ### BEGIN_BFC_PATCH
+        self.bfc_address = try_convert_to_bfc_address(testvalid)
+        ### END_BFC_PATCH
 
     @property
     def signer(self) -> str:
