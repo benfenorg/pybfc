@@ -9,6 +9,8 @@ env
 
 # Compiled code
 __pycache__
+*.pyc
+*.pyo
 Move.lock
 
 # logs
