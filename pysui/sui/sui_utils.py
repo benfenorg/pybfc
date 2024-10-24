@@ -346,6 +346,10 @@ def hexstring_to_list(indata: str, default_fill_length: int = 64) -> list[int]:
     :return: converted indata to int list
     :rtype: list[int]
     """
+    ### BEGIN_BFC_PATCH
+    if indata.startswith("BFC") and len(indata) == 71:
+        indata = "0x" + indata[3:67]
+    ### END_BFC_PATCH
     return [int(x) for x in binascii.unhexlify(hexstring_to_sui_id(indata)[2:])]
 
 

@@ -63,6 +63,10 @@ from pysui.sui.sui_builders.exec_builders import (
 )
 from pysui.sui.sui_utils import partition
 
+from pysui.bfc.context import is_bfc_activated
+from pysui.bfc.rpc_patch import to_bfc_rpc_method
+
+
 # Standard library logging setup
 logger = logging.getLogger("pysui.sync_client")
 if not logging.getLogger().handlers:
@@ -99,6 +103,11 @@ class SuiClient(ClientMixin):
         """Execute the builder construct."""
         # Validate builder and send request
         vres = self._validate_builder(builder)
+        ### BEGIN_BFC_PATCH
+        if is_bfc_activated():
+            vres["method"] = to_bfc_rpc_method(vres["method"])
+            builder._method = to_bfc_rpc_method(builder.method)
+        ### END_BFC_PATCH
         # print(vres)
         try:
             result = self._client.post(
@@ -289,6 +298,10 @@ class SuiClient(ClientMixin):
         :return: If successful, result contains an array of coins objects of coin_type found
         :rtype: SuiRpcResult
         """
+        ### BEGIN_BFC_PATCH
+        if is_bfc_activated() and str(coin_type) == "0x2::sui::SUI":
+            coin_type = SuiString("0x2::bfc::BFC")
+        ### END_BFC_PATCH
         result = self.execute(GetCoinTypeBalance(owner=address, coin_type=coin_type))
         if result.is_ok():
             limit: int = result.result_data.coin_object_count
