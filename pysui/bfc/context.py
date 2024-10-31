@@ -5,10 +5,13 @@
 __use_bfc = False
 
 
-def activate_bfc():
+def activate_bfc(active=True):
     global __use_bfc
-    __use_bfc = True
-    print("BFC was activated.")
+    __use_bfc = active
+    if active:
+        print("BFC was activated.")
+    else:
+        print("BFC was deactivated.")
 
 
 def is_bfc_activated():
